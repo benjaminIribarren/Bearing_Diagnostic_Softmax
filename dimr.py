@@ -4,7 +4,7 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DTRAIN_PATH = os.path.join(BASE_DIR, "dtrain.csv")
-N_COMPONENTES = 10
+N_COMPONENTES = 20
 EPOCHS = 1000
 LEARNING_RATE = 0.1 
 BETA = 0.9
@@ -42,17 +42,11 @@ def estimar_pesos_rls(Xr, X):
         ) / LAMBDA_RLS
     return W
 
-def gradiente_no_lineal(X, V, W):
+def gradiente_no_lineal(X, V, W): # Sin X_bias
     Xr = np.tanh(X @ V)
-
     error = Xr @ W - X
-
     costo = 0.5 * np.mean(np.sum(error**2, axis=1))
-
-    gradiente = (
-        X.T @ ((error @ W.T) * (1 - Xr**2))
-    ) / X.shape[0]
-
+    gradiente = (X.T @ ((error @ W.T) * (1 - Xr**2))) / X.shape[0]
     return gradiente, costo
 
 def actualizar_rmsprop(V, gradiente, acumulador):
@@ -68,36 +62,26 @@ def actualizar_rmsprop(V, gradiente, acumulador):
 
     return V, acumulador
 
-def entrenar_sls(X):
-
+def entrenar_sls(X): # Sin X_bias
     rng = np.random.default_rng(42)
-
     n_features = X.shape[1]
 
     V = rng.normal(
         0,
         np.sqrt(1 / n_features),
-        size=(n_features, N_COMPONENTES)
+        size=(n_features, N_COMPONENTES) # Sin el +1 del bias
     )
 
     acumulador = np.zeros_like(V)
-
     costos = []
 
     for epoca in range(EPOCHS):
-
         Xr = np.tanh(X @ V)
-
         W = estimar_pesos_rls(Xr, X)
 
-        gradiente, costo = gradiente_no_lineal(
-            X, V, W
-        )
+        gradiente, costo = gradiente_no_lineal(X, V, W)
 
-        V, acumulador = actualizar_rmsprop(
-            V, gradiente, acumulador
-        )
-
+        V, acumulador = actualizar_rmsprop(V, gradiente, acumulador)
         costos.append(costo)
 
     Xr = np.tanh(X @ V)
@@ -134,8 +118,10 @@ if __name__ == "__main__":
     X, Y = cargar_datos(DTRAIN_PATH)
     V, W, costos = entrenar_sls(X)
 
-    Xr = np.tanh(X @ V)
-    Xrr, media_Xr, Vpca, varianza_acumulada = pca_svd(Xr, varianza_objetivo=0.95)
+    # Vuelve a ser la proyección original sin el X_bias
+    Xr = np.tanh(X @ V) 
+    
+    Xrr, media_Xr, Vpca, varianza_acumulada = pca_svd(Xr, varianza_objetivo=0.99)
 
     np.savez(os.path.join(BASE_DIR, "pesos.npz"), V=V, W=W, media_Xr=media_Xr, Vpca=Vpca)
 
