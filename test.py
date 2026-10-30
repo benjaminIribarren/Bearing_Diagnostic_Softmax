@@ -50,11 +50,9 @@ def cargar_pesos_softmax(ruta):
     return W, media, desviacion
 
 def reducir_dimensionalidad(X, V, media_Xr, Vpca):
-
+    # Proyección pura sin bias artificial en la capa oculta
     Xr = np.tanh(X @ V)
-
     Xrr = (Xr - media_Xr) @ Vpca
-
     return Xrr
 
 def normalizar_datos(X, media, desviacion):
@@ -235,4 +233,5 @@ if __name__ == "__main__":
         bbox_inches="tight"
     )
     plt.close()
+
 
