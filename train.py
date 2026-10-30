@@ -7,7 +7,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DTRAIN_PATH = os.path.join(BASE_DIR, "dtrain.csv")
 PESOS_PATH = os.path.join(BASE_DIR, "pesos.npz")
 EPOCHS = 1000
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.01
 BETA = 0.9
 EPSILON = 1e-8
 N_CLASES = 4
@@ -29,9 +29,9 @@ def cargar_pesos(ruta):
     return V, media_Xr, Vpca
 
 def reducir_dimensionalidad(X, V, media_Xr, Vpca):
+    # Proyección pura sin bias artificial en la capa oculta
     Xr = np.tanh(X @ V)
     Xrr = (Xr - media_Xr) @ Vpca
-
     return Xrr
 
 def normalizar_datos(X):
@@ -56,9 +56,12 @@ def softmax(Z):
 
 def entropia_cruzada(Y, probabilidades):
     epsilon = 1e-12
+    # Clipeo de probabilidades para mayor estabilidad del logaritmo
+    prob_clip = np.clip(probabilidades, epsilon, 1.0 - epsilon)
+    
     costo = -np.mean(
         np.sum(
-            Y * np.log(probabilidades + epsilon),
+            Y * np.log(prob_clip),
             axis=1
         )
     )
@@ -135,5 +138,5 @@ if __name__ == "__main__":
         dpi=300,
         bbox_inches="tight"
     )
-    plt.show()
+    #plt.show()
     plt.close()
